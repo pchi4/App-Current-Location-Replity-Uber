@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import { StyleSheet, View, Dimensions, Text } from "react-native";
+import MapView, {
+  Marker,
+  PROVIDER_GOOGLE,
+  AnimatedRegion,
+} from "react-native-maps";
+import { StyleSheet, View, Dimensions, Text, Platform } from "react-native";
 import {
   requestForegroundPermissionsAsync,
   getCurrentPositionAsync,
@@ -13,7 +17,28 @@ import MapViewDirections from "react-native-maps-directions";
 const { width, height } = Dimensions.get("window");
 
 export default function App() {
-  const [location, setLocation] = useState(null);
+  const aspect = width / height;
+  const latitude_delta = 0.0922;
+  const longitude_delta = latitude_delta * aspect;
+  const mapRef = useRef();
+  const markerRef = useRef();
+  const [location, setLocation] = useState({
+    currentLocation: {
+      latitude: 30.7046,
+      longitude: 77.1025,
+    },
+    destinationCords: {},
+    isLoading: false,
+    coordinate: new AnimatedRegion({
+      latitude: 30.7046,
+      longitude: 77.1025,
+      latitudeDelta: latitude_delta,
+      longitudeDelta: longitude_delta,
+    }),
+    time: 0,
+    distance: 0,
+    heading: 0,
+  });
   const [initialRegion, setInitialRegion] = useState(null);
   const [destination, setDestination] = useState(null);
   const [origin, setOrigin] = useState(null);
@@ -24,33 +49,51 @@ export default function App() {
     { latitude: 37.771707, longitude: -122.4053769 },
   ]);
 
-  const aspect = width / height;
-  const latitude_delta = 0.0922;
-  const longitude_delta = latitude_delta * aspect;
-  const mapRef = useRef();
+  const requestPermision = async () => {
+    try {
+      const { granted } = await requestForegroundPermissionsAsync();
+      if (granted) {
+        const { coords } = await getCurrentPositionAsync();
+        const { latitude, longitude, heading } = coords;
+
+        animate(latitude, longitude);
+        updateState({
+          heading: heading,
+          currentLocation: { latitude, longitude },
+          coordinates: new AnimatedRegion({
+            latitude,
+            longitude,
+            latitudeDelta: latitude_delta,
+            longitudeDelta: longitude_delta,
+          }),
+        });
+      }
+    } catch (error) {}
+  };
+
+  const { coordinate, currentLocation, destinationCords } = location;
 
   useEffect(() => {
-    const requestPermision = async () => {
-      try {
-        const { granted } = await requestForegroundPermissionsAsync();
-        if (granted) {
-          const currentPosition = await getCurrentPositionAsync();
-          setLocation({ coordinates: new Array(currentPosition.coords) });
-          setOrigin({
-            latitude: currentPosition.coords.latitude,
-            longitude: currentPosition.coords.longitude,
-          });
-          setInitialRegion({
-            latitude: currentPosition.coords.latitude,
-            longitude: currentPosition.coords.longitude,
-            latitudeDelta: 0.005,
-            longitudeDelta: 0.005,
-          });
-        }
-      } catch (error) {}
-    };
     requestPermision();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      requestPermision();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const animate = (latitude, longitude) => {
+    const newCoordinate = { latitude, longitude };
+    if (Platform.OS == "android") {
+      if (markerRef.current) {
+        markerRef.current.animateMarkerToCoordinate(newCoordinate, 7000);
+      }
+    } else {
+      location.coordinate.timing(newCoordinate).start();
+    }
+  };
 
   // useEffect(() => {
   //   watchPositionAsync(
@@ -92,6 +135,13 @@ export default function App() {
   };
 
   const onPressAddress = (details) => {
+    updateState({
+      destinationCords: {
+        latitude: details?.geometry?.location.lat,
+
+        longitude: details?.geometry?.location.lng,
+      },
+    });
     moveToLocation(
       details?.geometry?.location.lat,
       details?.geometry?.location.lng
@@ -133,9 +183,6 @@ export default function App() {
   const onReady = (result) => {
     console.log(result);
 
-    let newArray = [...result.coordinates];
-
-    setLocation({ coordinates: newArray });
     mapRef.current.fitToCoordinates(result?.coordinates, {
       edgePadding: {
         right: width / 10,
@@ -156,58 +203,22 @@ export default function App() {
     // setLocation({ coordinates: [...location, ...e.nativeEvent.coordinate] });
   };
 
-  // console.log(coordinates);
-
-  // useEffect(() => {
-  //   requestFromApi();
-  // }, [location]);
-
-  // useEffect(() => {
-  //   // if (!newArray) return;
-  //   // console.log(newArray);
-  //   // setNewArray(newArray?.slice(1, -1));
-  //   intervalChange;
-  // }, []);
+  const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
 
   return (
     <View style={styles.container}>
-      <View
-        style={{
-          position: "absolute",
-          paddingTop: 40,
-          paddingHorizontal: 20,
-        }}
-      >
-        <Text style={{ fontSize: 20 }}>Selecione um local</Text>
-      </View>
-      <View
-        style={{
-          flex: 0.5,
-          paddingTop: 100,
-          padding: 20,
-          backgroundColor: "transparent",
-          zIndex: 1,
-        }}
-      >
-        <GooglePlacesAutocomplete
-          placeholder="Search"
-          fetchDetails={true}
-          onPress={(data, details = null) => {
-            // 'details' is provided when fetchDetails = true
-            onPressAddress(details);
-          }}
-          query={{
-            key: "AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc",
-            language: "pt-br",
-          }}
-        />
-      </View>
       {location && (
         <MapView
           // provider={PROVIDER_GOOGLE}
           ref={mapRef}
           style={styles.map}
-          initialRegion={initialRegion}
+          initialRegion={
+            {
+              ...currentLocation,
+              latitudeDelta: latitude_delta,
+              longitudeDelta: longitude_delta,
+            } ?? { latitude: 0, longitude: 0 }
+          }
           onPress={(value) => onMapPress(value)}
         >
           {/* <Marker
@@ -218,48 +229,93 @@ export default function App() {
             }}
           /> */}
 
-          <MapViewDirections
-            origin={location?.coordinates[0]}
-            destination={
-              location?.coordinates[location?.coordinates.length - 1]
-            }
-            waypoints={
-              location?.coordinates.length > 2
-                ? location?.coordinates.slice(1, -1)
-                : undefined
-            }
-            optimizeWaypoints={true}
-            apikey="AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc"
-            strokeColor="purple"
-            strokeWidth={4}
-            language="pt-br"
-            onReady={onReady}
-            mode="DRIVING"
-            onStart={(params) => {}}
+          <Marker.Animated
+            ref={markerRef}
+            coordinate={coordinate ?? { latitude: 0, longitude: 0 }}
           />
+
+          {Object.keys(destinationCords).length > 0 && (
+            <MapViewDirections
+              origin={currentLocation ?? { latitude: 0, longitude: 0 }}
+              destination={destinationCords ?? { latitude: 0, longitude: 0 }}
+              optimizeWaypoints={true}
+              apikey="AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc"
+              strokeColor="purple"
+              strokeWidth={4}
+              language="pt-br"
+              onReady={onReady}
+              mode="DRIVING"
+              onStart={(params) => {
+                console.log(
+                  `Started routing between "${params.origin}" and "${params.destination}"`
+                );
+              }}
+            />
+          )}
 
           {/* {location?.coordinates?.map((coordinate, index) => (
             <Marker key={index + 1} coordinate={coordinate} />
           ))} */}
-          <Marker coordinate={location?.coordinates[0]} />
+          <Marker
+            coordinate={currentLocation ?? { latitude: 0, longitude: 0 }}
+          />
 
           <Marker
             title="Destino final"
-            coordinate={location?.coordinates[coordinates.length - 1]}
+            coordinate={
+              destinationCords ?? {
+                latitude: 0,
+                longitude: 0,
+              }
+            }
           />
         </MapView>
       )}
+      <View
+        style={{
+          position: "absolute",
+          paddingTop: 40,
+          paddingHorizontal: 10,
+          width: "100%",
+        }}
+      >
+        <Text style={{ fontSize: 20 }}>Selecione um local</Text>
+        <View
+          style={{
+            backgroundColor: "transparent",
+            position: "absolute",
+            paddingTop: 80,
+
+            paddingHorizontal: 12,
+            left: 0,
+            right: 0,
+            // top: 100,
+          }}
+        >
+          <GooglePlacesAutocomplete
+            placeholder="Search"
+            fetchDetails={true}
+            onPress={(data, details = null) => {
+              // 'details' is provided when fetchDetails = true
+              onPressAddress(details);
+            }}
+            query={{
+              key: "AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc",
+              language: "pt-br",
+            }}
+          />
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#f0f0f0",
   },
   map: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-    height: "100%",
   },
 });
