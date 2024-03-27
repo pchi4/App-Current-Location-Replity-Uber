@@ -24,14 +24,14 @@ export default function App() {
   const markerRef = useRef();
   const [location, setLocation] = useState({
     currentLocation: {
-      latitude: 30.7046,
-      longitude: 77.1025,
+      latitude: -12.9166572,
+      longitude: -38.458494,
     },
-    destinationCords: {},
+    destinationCords: { latitude: 0, longitude: 0 },
     isLoading: false,
     coordinate: new AnimatedRegion({
-      latitude: 30.7046,
-      longitude: 77.1025,
+      latitude: -12.9166572,
+      longitude: -38.458494,
       latitudeDelta: latitude_delta,
       longitudeDelta: longitude_delta,
     }),
@@ -44,10 +44,10 @@ export default function App() {
   const [origin, setOrigin] = useState(null);
   const [count, setCount] = useState(0);
   const [newArray, setNewArray] = useState(null);
-  const [coordinates, setCoordinates] = useState([
-    { latitude: 37.3317876, longitude: -122.0054812 },
-    { latitude: 37.771707, longitude: -122.4053769 },
-  ]);
+  // const [coordinates, setCoordinates] = useState([
+  //   { latitude: 37.3317876, longitude: -122.0054812 },
+  //   { latitude: 37.771707, longitude: -122.4053769 },
+  // ]);
 
   const requestPermision = async () => {
     try {
@@ -71,7 +71,9 @@ export default function App() {
     } catch (error) {}
   };
 
-  const { coordinate, currentLocation, destinationCords } = location;
+  const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
+
+  const { coordinates, currentLocation, destinationCords } = location;
 
   useEffect(() => {
     requestPermision();
@@ -91,7 +93,7 @@ export default function App() {
         markerRef.current.animateMarkerToCoordinate(newCoordinate, 7000);
       }
     } else {
-      location.coordinate.timing(newCoordinate).start();
+      coordinates.timing(newCoordinate).start();
     }
   };
 
@@ -135,10 +137,10 @@ export default function App() {
   };
 
   const onPressAddress = (details) => {
+    console.log(details);
     updateState({
       destinationCords: {
         latitude: details?.geometry?.location.lat,
-
         longitude: details?.geometry?.location.lng,
       },
     });
@@ -182,15 +184,6 @@ export default function App() {
 
   const onReady = (result) => {
     console.log(result);
-
-    mapRef.current.fitToCoordinates(result?.coordinates, {
-      edgePadding: {
-        right: width / 10,
-        bottom: height / 10,
-        left: width / 10,
-        top: height / 10,
-      },
-    });
   };
 
   const onMapPress = (e) => {
@@ -202,8 +195,6 @@ export default function App() {
     setLocation({ coordinates: coord });
     // setLocation({ coordinates: [...location, ...e.nativeEvent.coordinate] });
   };
-
-  const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
 
   return (
     <View style={styles.container}>
@@ -231,19 +222,32 @@ export default function App() {
 
           <Marker.Animated
             ref={markerRef}
-            coordinate={coordinate ?? { latitude: 0, longitude: 0 }}
+            coordinate={coordinates ?? { latitude: 0, longitude: 0 }}
           />
 
           {Object.keys(destinationCords).length > 0 && (
+            <Marker coordinate={destinationCords} />
+          )}
+
+          {Object.keys(destinationCords).length > 0 && (
             <MapViewDirections
-              origin={currentLocation ?? { latitude: 0, longitude: 0 }}
-              destination={destinationCords ?? { latitude: 0, longitude: 0 }}
+              origin={currentLocation}
+              destination={destinationCords}
               optimizeWaypoints={true}
               apikey="AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc"
               strokeColor="purple"
               strokeWidth={4}
               language="pt-br"
-              onReady={onReady}
+              onReady={(result) =>
+                mapRef.current.fitToCoordinates(result?.coordinates, {
+                  edgePadding: {
+                    right: width / 10,
+                    bottom: height / 10,
+                    left: width / 10,
+                    top: height / 10,
+                  },
+                })
+              }
               mode="DRIVING"
               onStart={(params) => {
                 console.log(
