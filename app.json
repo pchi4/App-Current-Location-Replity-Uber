@@ -15,16 +15,34 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pchia.maps"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.pchia.maps"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "build": {
+      "preview": {
+        "android": {
+          "buildType": "apk"
+        }
+      },
+      "production": {}
+    },
+    "cli": {
+      "version": ">= 0.52.0"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f1d96207-115b-44fa-8865-e7d5b79c8dd5"
+      }
     }
   }
 }
