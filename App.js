@@ -81,7 +81,6 @@ export default function App() {
             longitudeDelta: longitude_delta,
           }),
         });
-        // moveToLocation(latitude, longitude);
       }
     } catch (error) {
       console.log(error);
@@ -117,18 +116,6 @@ export default function App() {
     }
   };
 
-  const requestFromApi = async () => {
-    try {
-      let res = await fetch(
-        `https://maps.google.com/maps/api/geocode/json?key=AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc&address=${location.latitude},${location.longitude}&sensor=false`,
-        { method: "POST" }
-      );
-      const resJson = await res.json();
-      // console.log(resJson);
-      return resJson;
-    } catch (error) {}
-  };
-
   function moveToLocation(latitude, longitude) {
     mapRef.current.animateToRegion({
       latitude,
@@ -162,7 +149,9 @@ export default function App() {
 
   if (!isGranted) {
     return (
-      <Text>Por favor, ative a localizaçao para o funcionamento do app.</Text>
+      <View style={{ flex: 1 }}>
+        <Text>Por favor, ative a localizaçao para o funcionamento do app.</Text>
+      </View>
     );
   }
 
@@ -184,7 +173,6 @@ export default function App() {
               latitudeDelta: latitude_delta,
               longitudeDelta: longitude_delta,
             }}
-            // onPress={(value) => onMapPress(value)}
           >
             {coordinates && (
               <Marker.Animated ref={markerRef} coordinate={coordinates} />
@@ -277,6 +265,7 @@ export default function App() {
                 key: "AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc",
                 language: "pt-br",
               }}
+              debounce={300}
             />
           </View>
           <View style={styles.containerCards}>
