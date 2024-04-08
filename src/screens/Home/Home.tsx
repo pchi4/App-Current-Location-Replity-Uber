@@ -1,11 +1,27 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+} from "react-native";
+import { styles } from "./style";
+const { width, height } = Dimensions.get("window");
 
 export const Home = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.articleFirst}>
-        <Text>Home</Text>
+        <Image
+          style={{ width: width / 1, height: width / 1 }}
+          source={require("@/assets/conversa.png")}
+        />
       </View>
+      <Text style={styles.textHome}>
+        Compartilhe sua localização e tenho acesso real de sua posição no mundo.
+      </Text>
+
       <View style={styles.articleSecond}>
         <TouchableOpacity
           style={styles.button}
@@ -17,29 +33,3 @@ export const Home = ({ navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  articleFirst: {
-    flex: 2,
-    backgroundColor: "gray",
-  },
-  articleSecond: {
-    flex: 1,
-    backgroundColor: "yellow",
-    justifyContent: "center",
-  },
-  button: {
-    backgroundColor: "blue",
-    padding: 20,
-    borderRadius: 20,
-    marginHorizontal: 12,
-  },
-  textButton: {
-    fontSize: 14,
-    color: "white",
-    textAlign: "center",
-  },
-});
