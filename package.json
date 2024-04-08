@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-navigation/native-stack": "^6.9.26",
     "@types/react": "~18.2.45",
     "expo": "~50.0.14",
     "expo-location": "~16.5.5",
@@ -19,6 +20,8 @@
     "react-native-google-places-autocomplete": "^2.5.6",
     "react-native-maps": "1.10.0",
     "react-native-maps-directions": "^1.9.0",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.29.0",
     "typescript": "^5.3.0"
   },
   "devDependencies": {
