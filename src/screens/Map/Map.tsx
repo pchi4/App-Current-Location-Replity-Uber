@@ -35,7 +35,8 @@ export const Map = ({ navigation }) => {
     destinationCords: { latitude: 0, longitude: 0 },
     isLoading: true,
     coordinate: new AnimatedRegion({
-      ...currentLocation,
+      latitude: -12.9166572,
+      longitude: -38.458494,
       latitudeDelta: latitude_delta,
       longitudeDelta: longitude_delta,
     }),
