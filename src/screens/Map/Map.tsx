@@ -17,7 +17,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { requestForegroundPermissionsAsync } from "expo-location";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import {
+  GooglePlaceDetail,
+  GooglePlacesAutocomplete,
+} from "react-native-google-places-autocomplete";
 import MapViewDirections from "react-native-maps-directions";
 const { width, height } = Dimensions.get("window");
 import { useGetCurrentLocation } from "../../hooks";
@@ -46,14 +49,17 @@ export const Map = ({ navigation }) => {
   });
 
   const [cards] = useState([
-    { title: "Casa", icon: require("@/assets/house.png") },
-    { title: "Trabalho", icon: require("@/assets/work.png") },
-    { title: "Favoritos", icon: require("@/assets/house.png") },
+    { title: "Casa" },
+    { title: "Trabalho" },
+    { title: "Favoritos" },
   ]);
 
   const { getCurrentLocation } = useGetCurrentLocation();
 
   const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
+
+  const { coordinates, currentLocation, destinationCords, isLoading, heading } =
+    location;
 
   async function requestPermision() {
     try {
@@ -80,8 +86,30 @@ export const Map = ({ navigation }) => {
     }
   }
 
-  const { coordinates, currentLocation, destinationCords, isLoading, heading } =
-    location;
+  const updateStateCoords = async () => {
+    try {
+      const { latitude, longitude, heading } = await getCurrentLocation();
+
+      animate(latitude, longitude);
+
+      updateState({
+        heading: heading,
+        currentLocation: { latitude, longitude },
+        coordinates: new AnimatedRegion({
+          latitude,
+          longitude,
+          latitudeDelta: latitude_delta,
+          longitudeDelta: longitude_delta,
+        }),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    updateStateCoords();
+  }, [currentLocation]);
 
   useEffect(() => {
     requestPermision();
@@ -98,7 +126,7 @@ export const Map = ({ navigation }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const animate = (latitude, longitude) => {
+  const animate = (latitude: any, longitude: any) => {
     const newCoordinate = { latitude, longitude };
     if (Platform.OS == "android") {
       if (markerRef?.current) {
@@ -109,7 +137,10 @@ export const Map = ({ navigation }) => {
     }
   };
 
-  function moveToLocation(latitude, longitude) {
+  function moveToLocation(
+    latitude: number | undefined,
+    longitude: number | undefined
+  ) {
     mapRef.current.animateToRegion({
       latitude,
       longitude,
@@ -118,7 +149,7 @@ export const Map = ({ navigation }) => {
     });
   }
 
-  const onPressAddress = (details) => {
+  const onPressAddress = (details: GooglePlaceDetail | null) => {
     updateState({
       destinationCords: {
         latitude: details?.geometry?.location.lat,
@@ -133,20 +164,20 @@ export const Map = ({ navigation }) => {
 
   const centerlizeCurrentPosition = async () => {
     try {
-      const { latitude, longitude, heading } = await getCurrentLocation();
+      const { latitude, longitude } = await getCurrentLocation();
       moveToLocation(latitude, longitude);
     } catch (error) {
       console.log(error);
     }
   };
-
-  if (!isGranted) {
-    return (
-      <View style={{ flex: 1 }}>
-        <Text>Por favor, ative a localizaçao para o funcionamento do app.</Text>
-      </View>
-    );
-  }
+  //
+  //   if (!isGranted) {
+  //     return (
+  //       <View style={{ flex: 1 }}>
+  //         <Text>Por favor, ative a localizaçao para o funcionamento do app.</Text>
+  //       </View>
+  //     );
+  //   }
   return (
     <SafeAreaView
       style={{
@@ -233,11 +264,11 @@ export const Map = ({ navigation }) => {
               }}
             >
               <TouchableOpacity onPress={() => navigation.popToTop()}>
-                <Image
+                {/* <Image
                   width={24}
                   alt="a"
                   source={require("@/assets/arrow_back.png")}
-                />
+                /> */}
               </TouchableOpacity>
             </View>
           </View>
@@ -265,11 +296,11 @@ export const Map = ({ navigation }) => {
           <View style={styles.containerCards}>
             {cards.map((card, idx) => (
               <View key={idx} style={styles.card}>
-                <Image
+                {/* <Image
                   source={card.icon}
                   width={32}
                   style={{ marginRight: 6 }}
-                />
+                /> */}
                 <Text style={{ color: "#2A6F97" }}>{card.title}</Text>
               </View>
             ))}
@@ -277,10 +308,10 @@ export const Map = ({ navigation }) => {
         </View>
         <TouchableOpacity onPress={centerlizeCurrentPosition}>
           <View style={styles.button}>
-            <Image
+            {/* <Image
               style={{ alignItems: "center" }}
               source={require("@/assets/gps_fixed.png")}
-            />
+            /> */}
           </View>
         </TouchableOpacity>
       </View>

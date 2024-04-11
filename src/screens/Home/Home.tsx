@@ -12,12 +12,7 @@ const { width, height } = Dimensions.get("window");
 export const Home = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.articleFirst}>
-        <Image
-          style={{ width: width / 1, height: width / 1 }}
-          source={require("@/assets/conversa.png")}
-        />
-      </View>
+      <View style={styles.articleFirst}></View>
       <Text style={styles.textHome}>
         Compartilhe sua localização e tenho acesso real de sua posição no mundo.
       </Text>
