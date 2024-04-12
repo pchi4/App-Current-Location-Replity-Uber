@@ -4,8 +4,8 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { Map } from "./src/screens/Map/Map";
-import { Button } from "@/screens/Button";
-import { Home } from "@/screens/Home";
+import { Button } from "./src/screens/Button";
+import { Home } from "./src/screens/Home";
 const Stack = createNativeStackNavigator();
 
 export default function App() {

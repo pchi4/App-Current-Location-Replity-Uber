@@ -49,9 +49,9 @@ export const Map = ({ navigation }) => {
   });
 
   const [cards] = useState([
-    { title: "Casa", icon: require("@/assets/house.png") },
-    { title: "Trabalho", icon: require("@/assets/work.png") },
-    { title: "Favoritos", icon: require("@/assets/house.png") },
+    { title: "Casa", icon: require("../../assets/house.png") },
+    { title: "Trabalho", icon: require("../../assets/work.png") },
+    { title: "Favoritos", icon: require("../../assets/house.png") },
   ]);
 
   const { getCurrentLocation } = useGetCurrentLocation();
@@ -70,14 +70,16 @@ export const Map = ({ navigation }) => {
 
         animate(latitude, longitude);
 
-        mapRef.current?.animateCamera({
-          center: {
-            latitude,
-            longitude,
-            latitudeDelta: latitude_delta,
-            longitudeDelta: longitude_delta,
-          },
-        });
+        if (!Object.values(destinationCords).includes(0)) {
+          mapRef.current?.animateCamera({
+            center: {
+              latitude,
+              longitude,
+              latitudeDelta: latitude_delta,
+              longitudeDelta: longitude_delta,
+            },
+          });
+        }
 
         updateState({
           heading: heading,
@@ -257,7 +259,7 @@ export const Map = ({ navigation }) => {
                 <Image
                   width={24}
                   alt="a"
-                  source={require("@/assets/arrow_back.png")}
+                  source={require("../../assets/arrow_back.png")}
                 />
               </TouchableOpacity>
             </View>
@@ -300,7 +302,7 @@ export const Map = ({ navigation }) => {
           <View style={styles.button}>
             <Image
               style={{ alignItems: "center" }}
-              source={require("@/assets/gps_fixed.png")}
+              source={require("../../assets/gps_fixed.png")}
             />
           </View>
         </TouchableOpacity>

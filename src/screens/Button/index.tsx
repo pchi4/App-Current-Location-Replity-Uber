@@ -31,10 +31,10 @@ export const Button = ({ navigation }) => {
             title="segundos"
             titleColor="#012A4A"
             ref={progressRef}
-            value={10}
+            value={0}
             radius={100}
             maxValue={10}
-            initialValue={0}
+            initialValue={10}
             progressValueColor={"#012A4A"}
             activeStrokeColor={"#FB8500"}
             activeStrokeWidth={15}
