@@ -23,6 +23,7 @@ import {
 } from "react-native-google-places-autocomplete";
 import MapViewDirections from "react-native-maps-directions";
 const { width, height } = Dimensions.get("window");
+import { Error } from "@/components/Erro";
 import { useGetCurrentLocation } from "../../hooks";
 import { styles } from "./style";
 
@@ -32,7 +33,8 @@ export const Map = ({ navigation }) => {
   const longitude_delta = latitude_delta * aspect;
   const mapRef = useRef();
   const markerRef = useRef();
-  const [isGranted, setIsGranted] = useState(false);
+
+  const [isGranted, setIsGranted] = useState(null);
   const [location, setLocation] = useState({
     currentLocation: { latitude: -12.9166572, longitude: -38.458494 },
     destinationCords: { latitude: 0, longitude: 0 },
@@ -64,22 +66,10 @@ export const Map = ({ navigation }) => {
   async function requestPermision() {
     try {
       const { granted } = await requestForegroundPermissionsAsync();
+
       setIsGranted(granted);
       if (granted) {
         const { latitude, longitude, heading } = await getCurrentLocation();
-
-        animate(latitude, longitude);
-
-        if (!Object.values(destinationCords).includes(0)) {
-          mapRef.current?.animateCamera({
-            center: {
-              latitude,
-              longitude,
-              latitudeDelta: latitude_delta,
-              longitudeDelta: longitude_delta,
-            },
-          });
-        }
 
         updateState({
           heading: heading,
@@ -90,6 +80,19 @@ export const Map = ({ navigation }) => {
             latitudeDelta: latitude_delta,
             longitudeDelta: longitude_delta,
           }),
+        });
+
+        if (!Object.values(destinationCords).includes(0)) return;
+
+        animate(latitude, longitude);
+
+        mapRef.current?.animateCamera({
+          center: {
+            latitude,
+            longitude,
+            latitudeDelta: latitude_delta,
+            longitudeDelta: longitude_delta,
+          },
         });
       }
     } catch (error) {
@@ -124,7 +127,7 @@ export const Map = ({ navigation }) => {
     latitude: number | undefined,
     longitude: number | undefined
   ) {
-    mapRef.current.animateToRegion({
+    mapRef?.current.animateToRegion({
       latitude,
       longitude,
       latitudeDelta: latitude_delta,
@@ -168,14 +171,10 @@ export const Map = ({ navigation }) => {
       console.log(error);
     }
   };
-  //
-  //   if (!isGranted) {
-  //     return (
-  //       <View style={{ flex: 1 }}>
-  //         <Text>Por favor, ative a localizaçao para o funcionamento do app.</Text>
-  //       </View>
-  //     );
-  //   }
+
+  if (!isGranted) {
+    return <Error handleGoHome={() => navigation.navigate("Home")} />;
+  }
 
   return (
     <SafeAreaView
@@ -281,6 +280,7 @@ export const Map = ({ navigation }) => {
               query={{
                 key: "AIzaSyDvNypCJVAfgPJ1nmrqZvz25wSbW3JOjUc",
                 language: "pt-br",
+                components: "country:br",
               }}
               debounce={300}
             />
