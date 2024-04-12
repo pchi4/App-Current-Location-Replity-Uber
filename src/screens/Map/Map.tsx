@@ -49,9 +49,9 @@ export const Map = ({ navigation }) => {
   });
 
   const [cards] = useState([
-    { title: "Casa" },
-    { title: "Trabalho" },
-    { title: "Favoritos" },
+    { title: "Casa", icon: require("@/assets/house.png") },
+    { title: "Trabalho", icon: require("@/assets/work.png") },
+    { title: "Favoritos", icon: require("@/assets/house.png") },
   ]);
 
   const { getCurrentLocation } = useGetCurrentLocation();
@@ -70,6 +70,15 @@ export const Map = ({ navigation }) => {
 
         animate(latitude, longitude);
 
+        mapRef.current?.animateCamera({
+          center: {
+            latitude,
+            longitude,
+            latitudeDelta: latitude_delta,
+            longitudeDelta: longitude_delta,
+          },
+        });
+
         updateState({
           heading: heading,
           currentLocation: { latitude, longitude },
@@ -86,37 +95,9 @@ export const Map = ({ navigation }) => {
     }
   }
 
-  const updateStateCoords = async () => {
-    try {
-      const { latitude, longitude, heading } = await getCurrentLocation();
-
-      animate(latitude, longitude);
-
-      updateState({
-        heading: heading,
-        currentLocation: { latitude, longitude },
-        coordinates: new AnimatedRegion({
-          latitude,
-          longitude,
-          latitudeDelta: latitude_delta,
-          longitudeDelta: longitude_delta,
-        }),
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    updateStateCoords();
-  }, [currentLocation]);
-
   useEffect(() => {
     requestPermision();
     centerlizeCurrentPosition();
-    LogBox.ignoreLogs([
-      "MapViewDirections Error: Error on GMAPS route request",
-    ]);
   }, []);
 
   useEffect(() => {
@@ -149,6 +130,21 @@ export const Map = ({ navigation }) => {
     });
   }
 
+  const onReadyFit = async (result: object) => {
+    try {
+      mapRef.current.fitToCoordinates(result?.coordinates, {
+        edgePadding: {
+          right: width / 10,
+          bottom: height / 10,
+          left: width / 10,
+          top: height / 10,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const onPressAddress = (details: GooglePlaceDetail | null) => {
     updateState({
       destinationCords: {
@@ -178,6 +174,7 @@ export const Map = ({ navigation }) => {
   //       </View>
   //     );
   //   }
+
   return (
     <SafeAreaView
       style={{
@@ -201,11 +198,11 @@ export const Map = ({ navigation }) => {
               <Marker.Animated ref={markerRef} coordinate={coordinates} />
             )}
 
-            {Object.keys(destinationCords).length > 0 && (
+            {!Object.values(destinationCords).includes(0) && (
               <Marker coordinate={destinationCords} />
             )}
 
-            {Object.keys(destinationCords).length > 0 && (
+            {!Object.values(destinationCords).includes(0) && (
               <MapViewDirections
                 origin={currentLocation}
                 destination={destinationCords}
@@ -214,16 +211,7 @@ export const Map = ({ navigation }) => {
                 strokeColor="purple"
                 strokeWidth={4}
                 language="pt-br"
-                onReady={(result) =>
-                  mapRef.current.fitToCoordinates(result?.coordinates, {
-                    edgePadding: {
-                      right: width / 10,
-                      bottom: height / 10,
-                      left: width / 10,
-                      top: height / 10,
-                    },
-                  })
-                }
+                onReady={(result) => onReadyFit(result)}
                 onStart={(params) => {
                   console.log(
                     `Started routing between "${params.origin}" and "${params.destination}"`
@@ -232,19 +220,21 @@ export const Map = ({ navigation }) => {
               />
             )}
 
-            <Marker
-              coordinate={currentLocation ?? { latitude: 0, longitude: 0 }}
-            />
+            {currentLocation && (
+              <Marker title="Você está aqui" coordinate={currentLocation} />
+            )}
 
-            <Marker
-              title="Destino final"
-              coordinate={
-                destinationCords ?? {
-                  latitude: 0,
-                  longitude: 0,
+            {!Object.values(destinationCords).includes(0) && (
+              <Marker
+                title="Destino final"
+                coordinate={
+                  destinationCords ?? {
+                    latitude: 0,
+                    longitude: 0,
+                  }
                 }
-              }
-            />
+              />
+            )}
           </MapView>
         )}
         <View style={styles.containerSearch}>
@@ -264,11 +254,11 @@ export const Map = ({ navigation }) => {
               }}
             >
               <TouchableOpacity onPress={() => navigation.popToTop()}>
-                {/* <Image
+                <Image
                   width={24}
                   alt="a"
                   source={require("@/assets/arrow_back.png")}
-                /> */}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -296,11 +286,11 @@ export const Map = ({ navigation }) => {
           <View style={styles.containerCards}>
             {cards.map((card, idx) => (
               <View key={idx} style={styles.card}>
-                {/* <Image
+                <Image
                   source={card.icon}
                   width={32}
                   style={{ marginRight: 6 }}
-                /> */}
+                />
                 <Text style={{ color: "#2A6F97" }}>{card.title}</Text>
               </View>
             ))}
@@ -308,10 +298,10 @@ export const Map = ({ navigation }) => {
         </View>
         <TouchableOpacity onPress={centerlizeCurrentPosition}>
           <View style={styles.button}>
-            {/* <Image
+            <Image
               style={{ alignItems: "center" }}
               source={require("@/assets/gps_fixed.png")}
-            /> */}
+            />
           </View>
         </TouchableOpacity>
       </View>
