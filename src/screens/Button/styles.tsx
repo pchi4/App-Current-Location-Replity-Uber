@@ -1,16 +1,17 @@
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions, Platform } from "react-native";
 
 const { width, height } = Dimensions.get("screen");
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 18,
+    padding: Platform.OS == "ios" ? 24 : 18,
   },
   header: {
-    marginTop: height / 10,
+    marginTop: height / 16,
     flex: 3,
     alignItems: "center",
+    padding: Platform.OS == "ios" ? 18 : 0,
   },
   titleTip: {
     color: "#F29E18",
