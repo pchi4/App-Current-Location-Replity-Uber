@@ -58,10 +58,11 @@ export const Map = ({ navigation }) => {
 
   const { getCurrentLocation } = useGetCurrentLocation();
 
+  const isLatitude = (num: number) => isFinite(num) && Math.abs(num) <= 90;
+
   const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
 
-  const { coordinates, currentLocation, destinationCords, isLoading, heading } =
-    location;
+  const { coordinates, currentLocation, destinationCords } = location;
 
   async function requestPermision() {
     try {
@@ -82,18 +83,21 @@ export const Map = ({ navigation }) => {
           }),
         });
 
-        if (!Object.values(destinationCords).includes(0)) return;
+        if (isLatitude(destinationCords.latitude)) {
+          return;
+        } else {
+          animate(latitude, longitude);
 
-        animate(latitude, longitude);
-
-        mapRef.current?.animateCamera({
-          center: {
-            latitude,
-            longitude,
-            latitudeDelta: latitude_delta,
-            longitudeDelta: longitude_delta,
-          },
-        });
+          mapRef.current?.animateCamera({
+            center: {
+              latitude,
+              longitude,
+              latitudeDelta: latitude_delta,
+              longitudeDelta: longitude_delta,
+            },
+          });
+          console.log("passei aqui");
+        }
       }
     } catch (error) {
       console.log(error);
@@ -221,20 +225,8 @@ export const Map = ({ navigation }) => {
               />
             )}
 
-            {currentLocation && (
-              <Marker title="Você está aqui" coordinate={currentLocation} />
-            )}
-
             {!Object.values(destinationCords).includes(0) && (
-              <Marker
-                title="Destino final"
-                coordinate={
-                  destinationCords ?? {
-                    latitude: 0,
-                    longitude: 0,
-                  }
-                }
-              />
+              <Marker title="Destino final" coordinate={destinationCords} />
             )}
           </MapView>
         )}
