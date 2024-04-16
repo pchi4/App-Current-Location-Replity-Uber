@@ -3,6 +3,7 @@ import MapView, {
   Marker,
   PROVIDER_GOOGLE,
   AnimatedRegion,
+  MapCallout,
 } from "react-native-maps";
 import {
   StyleSheet,
@@ -15,17 +16,30 @@ import {
   SafeAreaView,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { requestForegroundPermissionsAsync } from "expo-location";
 import {
   GooglePlaceDetail,
   GooglePlacesAutocomplete,
 } from "react-native-google-places-autocomplete";
-import MapViewDirections from "react-native-maps-directions";
+import MapViewDirections, { Callout } from "react-native-maps-directions";
 const { width, height } = Dimensions.get("window");
-import { Error } from "@/components/Erro";
+import { Error } from "../../components/Erro";
 import { useGetCurrentLocation } from "../../hooks";
 import { styles } from "./style";
+import { Info } from "../../components/Info";
+
+interface IObject {
+  text: string;
+  value: number | null;
+}
+interface IDeailsCoord {
+  distance: IObject;
+  durantion: IObject;
+  end_address: string;
+  start_address: string;
+}
 
 export const Map = ({ navigation }) => {
   const aspect = width / height;
@@ -50,6 +64,13 @@ export const Map = ({ navigation }) => {
     heading: 0,
   });
 
+  const [detailsCoord, setDetailsCoord] = useState<IDeailsCoord>({
+    distance: { text: "", value: null },
+    duration: { text: "", value: null },
+    end_address: "",
+    start_address: "",
+  });
+
   const [cards] = useState([
     { title: "Casa", icon: require("../../assets/house.png") },
     { title: "Trabalho", icon: require("../../assets/work.png") },
@@ -58,11 +79,18 @@ export const Map = ({ navigation }) => {
 
   const { getCurrentLocation } = useGetCurrentLocation();
 
-  const isLatitude = (num: number) => isFinite(num) && Math.abs(num) <= 90;
+  // const isLatitude = (num: number) => isFinite(num) && Math.abs(num) <= 90;
 
   const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
+  const updateStateDetails = (data) =>
+    setDetailsCoord((value) => ({ ...value, ...data }));
 
   const { coordinates, currentLocation, destinationCords } = location;
+
+  function isLatitude(lat: number): boolean {
+    if (lat === 0) return false;
+    return isFinite(lat) && Math.abs(lat) <= 90;
+  }
 
   async function requestPermision() {
     try {
@@ -83,9 +111,8 @@ export const Map = ({ navigation }) => {
           }),
         });
 
-        if (isLatitude(destinationCords.latitude)) {
-          return;
-        } else {
+        if (!isLatitude(destinationCords.latitude)) {
+          console.log("passei aqui");
           animate(latitude, longitude);
 
           mapRef.current?.animateCamera({
@@ -96,7 +123,6 @@ export const Map = ({ navigation }) => {
               longitudeDelta: longitude_delta,
             },
           });
-          console.log("passei aqui");
         }
       }
     } catch (error) {
@@ -139,19 +165,25 @@ export const Map = ({ navigation }) => {
     });
   }
 
-  const onReadyFit = async (result: object) => {
-    try {
-      mapRef.current.fitToCoordinates(result?.coordinates, {
-        edgePadding: {
-          right: width / 10,
-          bottom: height / 10,
-          left: width / 10,
-          top: height / 10,
-        },
+  const onReadyFit = (result: object) => {
+    // console.log({ result });
+    result.legs.forEach((element: IDeailsCoord) => {
+      updateStateDetails({
+        distance: element.distance,
+        duration: element.duration,
+        end_address: element.end_address,
+        start_address: element.start_address,
       });
-    } catch (error) {
-      console.log(error);
-    }
+    });
+
+    mapRef.current.fitToCoordinates(result?.coordinates, {
+      edgePadding: {
+        right: width / 10,
+        bottom: height / 10,
+        left: width / 10,
+        top: height / 10,
+      },
+    });
   };
 
   const onPressAddress = (details: GooglePlaceDetail | null) => {
@@ -200,11 +232,27 @@ export const Map = ({ navigation }) => {
             }}
           >
             {coordinates && (
-              <Marker.Animated ref={markerRef} coordinate={coordinates} />
+              <Marker.Animated ref={markerRef} coordinate={coordinates}>
+                {!Object.values(destinationCords).includes(0) && (
+                  <MapCallout tooltip={false}>
+                    <Info
+                      distance={detailsCoord?.duration?.text}
+                      address={detailsCoord.start_address}
+                    />
+                  </MapCallout>
+                )}
+              </Marker.Animated>
             )}
 
             {!Object.values(destinationCords).includes(0) && (
-              <Marker coordinate={destinationCords} />
+              <Marker coordinate={destinationCords}>
+                <MapCallout tooltip={false}>
+                  <Info
+                    distance={detailsCoord?.distance?.text}
+                    address={detailsCoord.end_address}
+                  />
+                </MapCallout>
+              </Marker>
             )}
 
             {!Object.values(destinationCords).includes(0) && (
@@ -222,11 +270,8 @@ export const Map = ({ navigation }) => {
                     `Started routing between "${params.origin}" and "${params.destination}"`
                   );
                 }}
+                onError={(value) => Alert.alert("Rota não encontrada", value)}
               />
-            )}
-
-            {!Object.values(destinationCords).includes(0) && (
-              <Marker title="Destino final" coordinate={destinationCords} />
             )}
           </MapView>
         )}
