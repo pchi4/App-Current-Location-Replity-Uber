@@ -2,11 +2,19 @@ import { useRef } from "react";
 import { View, SafeAreaView, TouchableOpacity, Text } from "react-native";
 
 import CircularProgress from "react-native-circular-progress-indicator";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 import { styles } from "./styles";
+import React from "react";
 
 export const Button = ({ navigation }) => {
   const progressRef = useRef();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      progressRef.current?.reAnimate();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,7 +57,9 @@ export const Button = ({ navigation }) => {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => progressRef?.current.pause()}
+          onPress={() => {
+            progressRef?.current.pause(), navigation.navigate("Home");
+          }}
         >
           <Text style={styles.textButton}>CANCELAR</Text>
         </TouchableOpacity>

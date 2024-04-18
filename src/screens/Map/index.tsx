@@ -29,6 +29,7 @@ import { Error } from "../../components/Erro";
 import { useGetCurrentLocation } from "../../hooks";
 import { styles } from "./style";
 import { Info } from "../../components/Info";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 interface IObject {
   text: string;
@@ -79,18 +80,11 @@ export const Map = ({ navigation }) => {
 
   const { getCurrentLocation } = useGetCurrentLocation();
 
-  // const isLatitude = (num: number) => isFinite(num) && Math.abs(num) <= 90;
-
   const updateState = (data) => setLocation((value) => ({ ...value, ...data }));
   const updateStateDetails = (data) =>
     setDetailsCoord((value) => ({ ...value, ...data }));
 
   const { coordinates, currentLocation, destinationCords } = location;
-
-  function isLatitude(lat: number): boolean {
-    if (lat === 0) return false;
-    return isFinite(lat) && Math.abs(lat) <= 90;
-  }
 
   async function requestPermision() {
     try {
@@ -110,30 +104,31 @@ export const Map = ({ navigation }) => {
             longitudeDelta: longitude_delta,
           }),
         });
-
-        if (!isLatitude(destinationCords.latitude)) {
-          console.log("passei aqui");
-          animate(latitude, longitude);
-
-          mapRef.current?.animateCamera({
-            center: {
-              latitude,
-              longitude,
-              latitudeDelta: latitude_delta,
-              longitudeDelta: longitude_delta,
-            },
-          });
-        }
       }
     } catch (error) {
       console.log(error);
     }
   }
 
+  useFocusEffect(
+    React.useCallback(() => {
+      requestPermision();
+      centerlizeCurrentPosition();
+    }, [])
+  );
+
   useEffect(() => {
-    requestPermision();
-    centerlizeCurrentPosition();
-  }, []);
+    if (destinationCords.latitude >= 0) {
+      mapRef.current?.animateCamera({
+        center: {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          latitudeDelta: latitude_delta,
+          longitudeDelta: longitude_delta,
+        },
+      });
+    }
+  }, [currentLocation.latitude]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -157,7 +152,7 @@ export const Map = ({ navigation }) => {
     latitude: number | undefined,
     longitude: number | undefined
   ) {
-    mapRef?.current.animateToRegion({
+    mapRef?.current?.animateToRegion({
       latitude,
       longitude,
       latitudeDelta: latitude_delta,
@@ -166,7 +161,6 @@ export const Map = ({ navigation }) => {
   }
 
   const onReadyFit = (result: object) => {
-    // console.log({ result });
     result.legs.forEach((element: IDeailsCoord) => {
       updateStateDetails({
         distance: element.distance,
@@ -176,7 +170,7 @@ export const Map = ({ navigation }) => {
       });
     });
 
-    mapRef.current.fitToCoordinates(result?.coordinates, {
+    mapRef.current?.fitToCoordinates(result?.coordinates, {
       edgePadding: {
         right: width / 10,
         bottom: height / 10,
@@ -199,13 +193,8 @@ export const Map = ({ navigation }) => {
     );
   };
 
-  const centerlizeCurrentPosition = async () => {
-    try {
-      const { latitude, longitude } = await getCurrentLocation();
-      moveToLocation(latitude, longitude);
-    } catch (error) {
-      console.log(error);
-    }
+  const centerlizeCurrentPosition = () => {
+    moveToLocation(currentLocation.latitude, currentLocation.longitude);
   };
 
   if (!isGranted) {
