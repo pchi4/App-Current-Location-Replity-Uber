@@ -10,6 +10,13 @@ Este é um aplicativo móvel desenvolvido em React Native que permite aos usuár
 - Geolocalização (react-native-geolocation-service)
 - API de Tráfego (ex.: Google Maps API ou outra de sua escolha)
 
+## Telas:
+
+
+<div style="display: flex; align-items: center;">
+  <img width="385" alt="Screenshot 2024-10-23 at 15 22 10" src="https://github.com/user-attachments/assets/3b188eb4-2c61-4a17-8c98-4b087b52bcf5">
+</div>
+
 ## Instalação
 
 ### Pré-requisitos
